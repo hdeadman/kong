@@ -121,6 +121,8 @@
   Defaults to `nil` which means do not add any tags
   to the metrics.
   [#10118](https://github.com/Kong/kong/pull/10118)
+- **AWS Lambda**: support scheme config on lambda service api endpoint
+  [#9799](https://github.com/Kong/kong/pull/9799)
 
 ### Fixes
 

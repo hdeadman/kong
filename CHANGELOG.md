@@ -87,6 +87,13 @@
 
 ## 3.2.0
 
+### Addition
+
+#### Core
+
+- PDK now support getting plugins' ID from `conf.plugin_id`.
+  [#9903](https://github.com/Kong/kong/pull/9903)
+
 ### Breaking Changes
 
 #### Plugins

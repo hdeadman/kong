@@ -1,6 +1,9 @@
 local helpers = require "spec.helpers"
 local cjson = require "cjson"
 
+local uuid_pattern = "^" .. ("%x"):rep(8) .. "%-" .. ("%x"):rep(4) .. "%-"
+.. ("%x"):rep(4) .. "%-" .. ("%x"):rep(4) .. "%-"
+.. ("%x"):rep(12) .. "$"
 
 describe("Plugin configuration", function()
   local proxy_client
@@ -49,5 +52,6 @@ describe("Plugin configuration", function()
     local body = assert.status(200, res)
     local json = cjson.decode(body)
     assert.equal("test", json.plugin_instance_name)
+    assert.match(uuid_pattern, json.plugin_id)
   end)
 end)

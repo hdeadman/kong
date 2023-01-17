@@ -84,6 +84,8 @@
   Expression router instead of the traditional router to ensure created routes
   are actually compatible.
   [#9987](https://github.com/Kong/kong/pull/9987)
+- Prevent CA certificate to be deleted that utilized by other entities.
+  [#10120](https://github.com/Kong/kong/pull/10120)
 
 #### Plugins
 

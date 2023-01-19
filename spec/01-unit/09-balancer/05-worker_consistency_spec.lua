@@ -35,7 +35,6 @@ local function setup_it_block(consistency)
       configuration = {
         worker_consistency = consistency,
         worker_state_update_frequency = 0.1,
-        legacy_worker_events = "on",
       },
       core_cache = mock_cache(cache_table),
     },
@@ -52,17 +51,7 @@ local function setup_kong(fixtures)
 
   _G.kong = kong
 
-  kong.worker_events = require "resty.worker.events"
   kong.db = {}
-
-  kong.worker_events.configure({
-    shm = "kong_process_events", -- defined by "lua_shared_dict"
-    timeout = 5,            -- life time of event data in shm
-    interval = 1,           -- poll interval (seconds)
-
-    wait_interval = 0.010,  -- wait before retry fetching event data
-    wait_max = 0.5,         -- max wait time before discarding event
-  })
 
   local function each(fixture)
     return function()

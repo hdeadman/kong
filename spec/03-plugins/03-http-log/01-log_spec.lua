@@ -3,6 +3,19 @@ local helpers    = require "spec.helpers"
 
 
 for _, strategy in helpers.each_strategy() do
+  local function reset_log(logname)
+    local client = assert(helpers.http_client(helpers.mock_upstream_host,
+        helpers.mock_upstream_port))
+    assert(client:send {
+        method  = "DELETE",
+        path    = "/reset_log/" .. logname,
+        headers = {
+          Accept = "application/json"
+        }
+    })
+    client:close()
+  end
+
   describe("Plugin: http-log (log) [#" .. strategy .. "]", function()
     local proxy_client
     local proxy_client_grpc, proxy_client_grpcs
@@ -444,9 +457,11 @@ for _, strategy in helpers.each_strategy() do
         }
       }))
       assert.res_status(200, res)
-      assert.logfile().has.line("failed to process entries: .* " ..
-                       helpers.mock_upstream_ssl_host .. ":" ..
-                       helpers.mock_upstream_ssl_port .. ": timeout", false, 2)
+      assert.logfile().has.line(
+        "handler could not process entries: failed request to "
+          .. helpers.mock_upstream_ssl_host .. ":"
+          .. helpers.mock_upstream_ssl_port .. ": timeout", false, 2
+      )
     end)
 
     it("adds authorization if userinfo and/or header is present", function()
@@ -521,6 +536,94 @@ for _, strategy in helpers.each_strategy() do
         end
       end, 10)
     end)
+
+
+    it("puts changed configuration into effect immediately #xxx", function()
+        local admin_client = assert(helpers.admin_client())
+
+        local function check_header_is(value)
+          reset_log("config_change")
+          ngx.sleep(2)
+
+          local res = assert(proxy_client:send({
+                method  = "GET",
+                path    = "/status/200",
+                headers = {
+                  ["Host"] = "config_change.test"
+                }
+          }))
+          assert.res_status(200, res)
+
+          helpers.wait_until(function()
+              local client = assert(helpers.http_client(helpers.mock_upstream_host, helpers.mock_upstream_port))
+              local res = assert(client:send {
+                  method  = "GET",
+                  path    = "/read_log/config_change",
+                  headers = {
+                    Accept = "application/json"
+                  }
+              })
+              local raw = assert.res_status(200, res)
+              local body = cjson.decode(raw)
+
+              if #body.entries == 1 then
+                assert.same(value, body.entries[1].log_req_headers.key1)
+                return true
+              end
+          end, 10)
+        end
+
+        local res = admin_client:post("/services/", {
+            body = {
+              name = "config_change",
+              url = "http://" .. helpers.mock_upstream_host .. ":" .. helpers.mock_upstream_port,
+            },
+            headers = {["Content-Type"] = "application/json"},
+        })
+        assert.res_status(201, res)
+
+        local res = admin_client:post("/services/config_change/routes/", {
+            body = {
+              hosts = { "config_change.test" },
+            },
+            headers = {["Content-Type"] = "application/json"},
+        })
+        assert.res_status(201, res)
+
+        res = admin_client:post("/services/config_change/plugins/", {
+            body = {
+              name     = "http-log",
+              config   = {
+                http_endpoint = "http://" .. helpers.mock_upstream_host
+                  .. ":"
+                  .. helpers.mock_upstream_port
+                  .. "/post_log/config_change",
+                headers = { key1 = "value1" },
+              }
+            },
+            headers = {["Content-Type"] = "application/json"},
+        })
+        local body = assert.res_status(201, res)
+        local plugin = cjson.decode(body)
+
+        check_header_is("value1")
+
+        local res = admin_client:patch("/plugins/" .. plugin.id, {
+            body = {
+              config = {
+                headers = {
+                  key1 = "value2"
+                },
+              },
+            },
+            headers = {["Content-Type"] = "application/json"},
+        })
+        assert.res_status(200, res)
+
+        check_header_is("value2")
+
+        admin_client:close()
+   end)
   end)
 
   -- test both with a single worker for a deterministic test,
@@ -608,20 +711,6 @@ for _, strategy in helpers.each_strategy() do
           proxy_client:close()
         end
       end)
-
-
-      local function reset_log(logname)
-        local client = assert(helpers.http_client(helpers.mock_upstream_host,
-                                                  helpers.mock_upstream_port))
-        assert(client:send {
-          method  = "DELETE",
-          path    = "/reset_log/" .. logname,
-          headers = {
-            Accept = "application/json"
-          }
-        })
-        client:close()
-      end
 
 
       it("logs to HTTP with a buffer", function()

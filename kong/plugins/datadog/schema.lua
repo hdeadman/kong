@@ -1,4 +1,6 @@
 local typedefs = require "kong.db.schema.typedefs"
+local deprecation = require("kong.deprecation")
+local QUEUE_CONFIGURATION_SCHEMA = require("kong.tools.queue").configuration_schema
 
 local STAT_NAMES = {
   "kong_latency",
@@ -79,9 +81,13 @@ return {
           { service_name_tag = { type = "string", default = "name" }, },
           { status_tag = { type = "string", default = "status" }, },
           { consumer_tag = { type = "string", default = "consumer" }, },
-          { retry_count = { type = "integer", required = true, default = 10 }, },
-          { queue_size = { type = "integer", required = true, default = 1 }, },
-          { flush_timeout = { type = "number", required = true, default = 2 }, },
+          { retry_count = { type = "integer", required = true, default = 10 }, },  -- deprecated, use queue.max_retry_time
+          { queue_size = { type = "integer", required = true, default = 1 }, }, -- deprecated, use queue.batch_max_size
+          { flush_timeout = { type = "number", required = true, default = 2 }, }, -- deprecated, use queue.max_delay
+          { queue = {
+            type = "record",
+            fields = QUEUE_CONFIGURATION_SCHEMA,
+          }},
           { metrics = {
               type     = "array",
               required = true,
@@ -101,7 +107,29 @@ return {
                     if_match = { one_of = { "counter", "gauge" }, },
                     then_field = "sample_rate",
                     then_match = { required = true },
-          }, }, }, }, }, },
+                  }, }, }, }, },
+          },
+        },
+
+        entity_checks = {
+          { custom_entity_check = {
+              field_sources = { "retry_count", "queue_size", "flush_timeout" },
+              fn = function(entity)
+                if entity.retry_count then
+                  deprecation("retry_count is deprecated, please use queue.max_retry_time instead",
+                    { after = "4.0", })
+                end
+                if entity.queue_size then
+                  deprecation("queue_size is deprecated, please use queue.batch_max_size instead",
+                    { after = "4.0", })
+                end
+                if entity.flush_timeout then
+                  deprecation("flush_timeout is deprecated, please use queue.max_delay instead",
+                    { after = "4.0", })
+                end
+                return true
+              end
+          } },
         },
       },
     },

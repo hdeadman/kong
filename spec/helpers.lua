@@ -2630,6 +2630,67 @@ do
 end
 
 
+--- Assertion to check whether a string matches a regular expression
+-- @function match_re
+-- @param string the string
+-- @param regex the regular expression
+-- @return true or false
+-- @usage
+-- assert.match_re("foobar", [[bar$]])
+--
+
+local ngx_log_level_names = {
+  [0] = "STDERR",
+  "EMERG",
+  "ALERT",
+  "CRIT",
+  "ERR",
+  "WARN",
+  "NOTICE",
+  "INFO",
+  "DEBUG"
+}
+
+local function match_re(_, args)
+  local string = args[1]
+  local regex = args[2]
+  assert(type(string) == "string",
+    "Expected the string argument to be a string")
+  assert(type(regex) == "string",
+    "Expected the regex argument to be a string")
+  local from, _, err = ngx.re.find(string, regex)
+  if err then
+    error(err)
+  end
+  if from then
+    table.insert(args, 1, string)
+    table.insert(args, 1, regex)
+    args.n = 2
+    return true
+  else
+    return false
+  end
+end
+
+say:set("assertion.match_re.negative", unindent [[
+    Expected log:
+    %s
+    To match:
+    %s
+  ]])
+say:set("assertion.match_re.positive", unindent [[
+    Expected log:
+    %s
+    To not match:
+    %s
+    But matched line:
+    %s
+  ]])
+luassert:register("assertion", "match_re", match_re,
+  "assertion.match_re.negative",
+  "assertion.match_re.positive")
+
+
 ----------------
 -- DNS-record mocking.
 -- These function allow to create mock dns records that the test Kong instance
@@ -3671,6 +3732,7 @@ end
   setenv = setenv,
   unsetenv = unsetenv,
   deep_sort = deep_sort,
+  ngx_log_level_names = ngx_log_level_names,
 
   -- launching Kong subprocesses
   start_kong = start_kong,

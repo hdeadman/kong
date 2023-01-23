@@ -98,6 +98,10 @@
   The parameter `absolute_timeout` has a default value of `86400`: unless configured differently,
   sessions expire after 86400 seconds (24 hours).
   [#10199](https://github.com/Kong/kong/pull/10199)
+- **http-log, statsd, opentelemetry, datadog**: The queueing system
+  has been reworked, causing a some plugin parameters to be
+  deprecated and new parameters to be added.
+  [#10172](https://github.com/Kong/kong/pull/10172)
 
 ### Additions
 

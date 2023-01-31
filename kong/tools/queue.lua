@@ -89,7 +89,7 @@ end
 
 
 local Queue = {
-  configuration_fields = {
+  fields = {
     name = {
       type = "string",
       description = "name of the queue",
@@ -134,15 +134,8 @@ local Queue = {
       default = 60,
       description = "time in seconds before an idle queue is deleted",
     },
-  },
-  configuration_schema = {}
+  }
 }
-
-for name, schema in pairs(Queue.configuration_fields) do
-  -- can't use schema directly because Josh's `description` has not yet been implemented.
-  table.insert(Queue.configuration_schema, { [name] = { type = schema.type, default = schema.default } })
-end
-
 
 local Queue_mt = {
   __index = Queue
@@ -184,6 +177,11 @@ function Queue.get(name, handler, opts)
     return queue
   end
 
+  queue = {}
+  for name, value in pairs(opts) do
+    queue[name] = value
+  end
+
   queue = {
     name = name,
     handler = handler,
@@ -196,20 +194,6 @@ function Queue.get(name, handler, opts)
     bytes_queued = 0,
     queue = {},
   }
-
-  for key, _ in pairs(opts) do
-    assert(Queue.configuration_fields[key], key .. " is not a valid queue parameter")
-  end
-
-  for key, schema in pairs(Queue.configuration_fields) do
-    if opts[key] ~= nil then
-      assert(type(opts[key]) == schema.type,
-        key .. " must be a " .. schema.type)
-      queue[key] = opts[key]
-    elseif queue[key] == nil then
-      queue[key] = schema.default
-    end
-  end
 
   queue = setmetatable(queue, Queue_mt)
 

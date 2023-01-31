@@ -1,7 +1,6 @@
 local typedefs = require "kong.db.schema.typedefs"
 local constants = require "kong.plugins.statsd.constants"
 local deprecation = require("kong.deprecation")
-local QUEUE_CONFIGURATION_SCHEMA = require("kong.tools.queue").configuration_schema
 
 
 local METRIC_NAMES = {
@@ -195,10 +194,7 @@ return {
           { retry_count = { type = "integer", required = true, default = 10 }, },  -- deprecated, use queue.max_retry_time
           { queue_size = { type = "integer", required = true, default = 1 }, }, -- deprecated, use queue.batch_max_size
           { flush_timeout = { type = "number", required = true, default = 2 }, }, -- deprecated, use queue.max_delay
-          { queue = {
-            type = "record",
-            fields = QUEUE_CONFIGURATION_SCHEMA,
-          } },
+          { queue = typedefs.queue },
         },
         entity_checks = {
           { custom_entity_check = {

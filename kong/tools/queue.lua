@@ -75,6 +75,8 @@ use in/out pointer instead of array manipulation
 
 
 local semaphore = require "ngx.semaphore"
+local schema = require "kong.tools.queue_schema"
+local inspect = require "inspect"
 
 local DEBUG = ngx.DEBUG
 local INFO = ngx.INFO
@@ -87,55 +89,7 @@ local function now()
   return ngx.now()
 end
 
-
-local Queue = {
-  fields = {
-    name = {
-      type = "string",
-      description = "name of the queue",
-    },
-    batch_max_size = {
-      type = "number",
-      default = 1,
-      description = "maximum number of entries to be given to the handler as a batch"
-    },
-    max_delay = {
-      type = "number",
-      default = 1,
-      description = "maximum number of (fractional) seconds to elapse after the first entry was queued before the queue starts calling the handler",
-    },
-    capacity = {
-      type = "number",
-      default = 10000,
-      description = "maximum number of entries that can be waiting on the queue",
-    },
-    string_capacity = {
-      type = "number",
-      default = nil,
-      description = "maximum number of bytes that can be waiting on a queue, requires string content",
-    },
-    max_retry_time = {
-      type = "number",
-      default = 60,
-      description = "time in seconds before the queue gives up calling a failed handler for a batch",
-    },
-    max_retry_delay = {
-      type = "number",
-      default = 60,
-      description = "maximum time in seconds between retries, caps exponential backoff"
-    },
-    poll_time = {
-      type = "number",
-      default = 1,
-      description = "time in seconds between polls for worker shutdown",
-    },
-    max_idle_time = {
-      type = "number",
-      default = 60,
-      description = "time in seconds before an idle queue is deleted",
-    },
-  }
-}
+local Queue = {}
 
 local Queue_mt = {
   __index = Queue
@@ -180,6 +134,11 @@ function Queue.get(name, handler, opts)
   queue = {}
   for name, value in pairs(opts) do
     queue[name] = value
+  end
+
+  ok, err_t = schema:validate(queue)
+  if not ok then
+    error("Error while validating queue configuration: " .. inspect(err_t))
   end
 
   queue = {

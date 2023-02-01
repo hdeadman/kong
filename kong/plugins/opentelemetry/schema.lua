@@ -45,8 +45,6 @@ return {
           },
         } },
         { resource_attributes = resource_attributes },
-        { batch_span_count = { type = "integer", required = true, default = 200 } }, -- deprecated, use queue.batch_max_size
-        { batch_flush_delay = { type = "integer", required = true, default = 3 } }, -- deprecated, use queue.max_delay
         { queue = typedefs.queue },
         { connect_timeout = typedefs.timeout { default = 1000 } },
         { send_timeout = typedefs.timeout { default = 5000 } },

@@ -191,9 +191,6 @@ return {
           { service_identifier_default = { type = "string", required = true, default = "service_name_or_host", one_of = SERVICE_IDENTIFIERS }, },
           { workspace_identifier_default = { type = "string", required = true, default = "workspace_id", one_of = WORKSPACE_IDENTIFIERS }, },
           { tag_style = { type = "string", required = false, one_of = TAG_TYPE }, },
-          { retry_count = { type = "integer", required = true, default = 10 }, },  -- deprecated, use queue.max_retry_time
-          { queue_size = { type = "integer", required = true, default = 1 }, }, -- deprecated, use queue.batch_max_size
-          { flush_timeout = { type = "number", required = true, default = 2 }, }, -- deprecated, use queue.max_delay
           { queue = typedefs.queue },
         },
         entity_checks = {

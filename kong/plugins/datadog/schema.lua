@@ -80,9 +80,6 @@ return {
           { service_name_tag = { type = "string", default = "name" }, },
           { status_tag = { type = "string", default = "status" }, },
           { consumer_tag = { type = "string", default = "consumer" }, },
-          { retry_count = { type = "integer", required = true, default = 10 }, },  -- deprecated, use queue.max_retry_time
-          { queue_size = { type = "integer", required = true, default = 1 }, }, -- deprecated, use queue.batch_max_size
-          { flush_timeout = { type = "number", required = true, default = 2 }, }, -- deprecated, use queue.max_delay
           { queue = typedefs.queue },
           { metrics = {
               type     = "array",
@@ -126,6 +123,41 @@ return {
                 return true
               end
           } },
+        },
+
+        entity_checks = {
+          { custom_entity_check = {
+            field_sources = { "retry_count", "queue_size", "flush_timeout" },
+            fn = function(entity)
+              if entity.retry_count then
+                deprecation("retry_count is deprecated, please use queue.max_retry_time instead",
+                            { after = "4.0", })
+              end
+              if entity.queue_size then
+                deprecation("queue_size is deprecated, please use queue.batch_max_size instead",
+                            { after = "4.0", })
+              end
+              if entity.flush_timeout then
+                deprecation("flush_timeout is deprecated, please use queue.max_delay instead",
+                            { after = "4.0", })
+              end
+              return true
+            end
+          } },
+        },
+        shorthand_fields = {
+          { retry_count = { type = "integer", default = 10, func = function(value)
+              return { ["queue.max_retry_time"] = value }
+            end,
+          }, },
+          { queue_size = { type = "integer", default = 1, func = function(value)
+              return { ["queue.batch_max_size"] = value }
+            end,
+          }, },
+          { flush_timeout = { type = "integer", default = 2, func = function(value)
+              return { ["queue.max_delay"] = value }
+            end,
+          }, },
         },
       },
     },

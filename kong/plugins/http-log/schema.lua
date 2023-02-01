@@ -15,9 +15,6 @@ return {
           { content_type = { type = "string", default = "application/json", one_of = { "application/json" }, }, },
           { timeout = { type = "number", default = 10000 }, },
           { keepalive = { type = "number", default = 60000 }, },
-          { retry_count = { type = "integer", default = 10 }, },  -- deprecated, use queue.max_retry_time
-          { queue_size = { type = "integer", default = 1 }, }, -- deprecated, use queue.batch_max_size
-          { flush_timeout = { type = "number", default = 2 }, }, -- deprecated, use queue.max_delay
           { headers = {
             type = "map",
             keys = typedefs.header_name {

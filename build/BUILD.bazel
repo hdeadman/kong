@@ -44,6 +44,7 @@ kong_directory_genrule(
         "@luarocks//:luarocks_make",
         "@luarocks//:luarocks_target",
         "@protoc//:all_srcs",
+        "@ngx_wasm_module//:lib_resty_srcs",
     ] + lib_deps + lualib_deps,
     cmd =
         """ set -e
@@ -88,6 +89,13 @@ kong_directory_genrule(
 
         ATC_ROUTER=${WORKSPACE_PATH}/$(location @atc_router)
         cp $ATC_ROUTER ${BUILD_DESTDIR}/openresty/lualib/.
+
+        for src in $(locations @ngx_wasm_module//:lib_resty_srcs); do
+            dst="${BUILD_DESTDIR}/openresty/lualib/$(echo "$src" | sed 's,^.*/lib/,,')"
+            dstdir="$(dirname $dst)"
+            mkdir -p "$dstdir"
+            cp -v "$src" "$dstdir"
+        done
 
         cp -r $(locations @protoc//:all_srcs) ${BUILD_DESTDIR}/kong/.
 

@@ -31,3 +31,8 @@ bin/grpcurl
 *.rock
 
 bazel-*
+
+upgrade-test-log
+
+*.wasm
+target/

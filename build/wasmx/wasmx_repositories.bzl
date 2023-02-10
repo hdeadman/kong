@@ -28,6 +28,12 @@ filegroup(
     srcs = glob(["lib/v8bridge/**"]),
     visibility = ["//visibility:public"]
 )
+
+filegroup(
+    name = "lib_resty_srcs",
+    srcs = glob(["lib/resty/**"]),
+    visibility = ["//visibility:public"]
+)
 """
     )
 

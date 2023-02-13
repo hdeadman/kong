@@ -31,7 +31,7 @@ local function handle_put_log_level(self, broadcast)
     return kong.response.exit(200, { message = message })
   end
 
-  local ok, err = pcall(set_log_level, log_level)
+  local ok, err = pcall(set_log_level, log_level, 30)
 
   if not ok then
     local message = "failed setting log level: " .. err

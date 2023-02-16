@@ -2,6 +2,7 @@ local multipart = require "multipart"
 local cjson = require("cjson.safe").new()
 local pl_template = require "pl.template"
 local pl_tablex = require "pl.tablex"
+local sandbox = require "kong.tools.sandbox"
 
 local table_insert = table.insert
 local get_uri_args = kong.request.get_query
@@ -23,10 +24,12 @@ local pairs = pairs
 local error = error
 local rawset = rawset
 local pl_copy_table = pl_tablex.deepcopy
+local lua_enabled = sandbox.configuration.enabled
+local sandbox_enabled = sandbox.configuration.sandbox_enabled
 
 local _M = {}
 local template_cache = setmetatable( {}, { __mode = "k" })
-local template_environment
+local template_environment = {}
 
 local DEBUG = ngx.DEBUG
 local CONTENT_LENGTH = "content-length"
@@ -40,6 +43,11 @@ local compile_opts = {
   escape = "\xff", -- disable '#' as a valid template escape
 }
 
+if not lua_enabled then
+  compile_opts.inline_escape = "\xff" -- disable inline Lua expressions
+  kong.log.info("loading of untrusted Lua code disabled because " ..
+                "'untrusted_lua' config option is set to 'off'")
+end
 
 cjson.decode_array_with_array_mt(true)
 
@@ -89,7 +97,9 @@ local __meta_environment = {
     }
     local loader = lazy_loaders[key]
     if not loader then
-      -- we don't have a loader, so just return nothing
+      if lua_enabled and not sandbox_enabled then
+        return _G[key]
+      end
       return
     end
     -- set the result on the table to not load again
@@ -102,13 +112,16 @@ local __meta_environment = {
   end,
 }
 
-template_environment = setmetatable({
+if lua_enabled and sandbox_enabled then
+  -- load the sandbox environment to be used to render the template
+  template_environment = sandbox.configuration.environment
   -- here we can optionally add functions to expose to the sandbox, eg:
-  -- tostring = tostring,  -- for example
+  -- tostring = tostring,
   -- because headers may contain array elements such as duplicated headers
   -- type is a useful function in these cases. See issue #25.
-  type = type,
-}, __meta_environment)
+  template_environment.type = type
+end
+setmetatable(template_environment, __meta_environment)
 
 local function clear_environment(conf)
   rawset(template_environment, "headers", nil)

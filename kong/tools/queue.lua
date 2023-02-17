@@ -214,8 +214,6 @@ function Queue.get(plugin_name, handler, opts)
     if opts[name] ~= nil then
       assert(type(opts[name]) == schema.type,
         name .. " must be a " .. schema.type)
-    end
-    if opts[name] ~= nil then
       queue[name] = opts[name]
     else
       queue[name] = schema.default
@@ -383,7 +381,7 @@ function Queue:add(data)
     return nil, "entry must be a non-nil Lua value"
   end
 
-  if #self.queue == self.capacity * 0.9 then
+  if #self.queue == math.floor(self.capacity * 0.9) then
     self:log(WARN, 'queue at 90% capacity')
   end
 

@@ -30,4 +30,4 @@ bin/grpcurl
 *.bak
 *.rock
 
-bazel-*
+/bazel-*

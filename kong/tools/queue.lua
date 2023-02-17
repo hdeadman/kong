@@ -154,15 +154,11 @@ local Queue_mt = {
 ---------
 
 
-local function make_queue_name(plugin_name, queue_name)
-  return plugin_name .. "." .. queue_name
-end
-
 local queues = {}
 
 
-function Queue.exists(plugin_name, queue_name)
-  return queues[make_queue_name(plugin_name, queue_name)] and true or false
+function Queue.exists(queue_name)
+  return queues[queue_name] and true or false
 end
 
 -------------------------------------------------------------------------------
@@ -170,31 +166,26 @@ end
 -- @param process function, invoked to process every payload generated
 -- @param opts table, requires `name`, optionally includes `retry_count`, `max_delay` and `batch_max_size`
 -- @return table: a Queue object.
-function Queue.get(plugin_name, handler, opts)
+function Queue.get(queue_name, handler, opts)
 
-  assert(type(plugin_name) == "string",
-    "arg #1 (plugin_name) must be a string")
+  assert(type(queue_name) == "string",
+    "arg #1 (queue_name) must be a string")
   assert(type(handler) == "function",
     "arg #2 (handler) must be a function")
   assert(type(opts) == "table",
     "arg #3 (opts) must be a table")
-  assert(type(opts.name) == "string",
-    "opts.name must be a string")
 
-  local queue_name = make_queue_name(plugin_name, opts.name)
+  assert(not opts.name or (opts.name == queue_name),
+    "inconsistent queue name in argument and queue configuration")
+
   local queue = queues[queue_name]
   if queue then
     queue:log(DEBUG, "queue exists")
-    for name, _ in pairs(Queue.configuration_fields) do
-      if queue[name] ~= opts[name] then
-        queue:log(ERR, "inconsistent parameter %s for queue %s.%s", name, plugin_name, queue.name)
-      end
-    end
     return queue
   end
 
   queue = {
-    plugin_name = plugin_name,
+    queue_name = queue_name,
     handler = handler,
 
     semaphore = semaphore.new(),
@@ -210,13 +201,13 @@ function Queue.get(plugin_name, handler, opts)
     assert(Queue.configuration_fields[name], name .. " is not a valid queue parameter")
   end
 
-  for name, schema in pairs(Queue.configuration_fields) do
-    if opts[name] ~= nil then
-      assert(type(opts[name]) == schema.type,
-        name .. " must be a " .. schema.type)
-      queue[name] = opts[name]
+  for key, schema in pairs(Queue.configuration_fields) do
+    if opts[key] ~= nil then
+      assert(type(opts[key]) == schema.type,
+        key .. " must be a " .. schema.type)
+      queue[key] = opts[key]
     else
-      queue[name] = schema.default
+      queue[key] = schema.default
     end
   end
 
@@ -253,7 +244,12 @@ end
 -- @param formatstring: format string, will get the queue name and ": " prepended
 -- @param ...: formatter arguments
 function Queue:log(level, formatstring, ...)
-  return ngx.log(level, string.format(self.plugin_name .. "." .. self.name .. ": " .. formatstring, unpack({...})))
+  local message = self.queue_name .. ": " .. formatstring
+  if select('#', ...) > 0 then
+    return ngx.log(level, string.format(message, unpack({...})))
+  else
+    return ngx.log(level, message)
+  end
 end
 
 
@@ -333,7 +329,6 @@ end
 
 
 function Queue.get_params(config)
-  local key = config.__key__
   local queue = unpack({config.queue or {}})
   if config.retry_count then
     ngx.log(ngx.WARN, string.format(
@@ -351,9 +346,6 @@ function Queue.get_params(config)
       "deprecated `flush_timeout` parameter in plugin %s converted to `queue.max_delay`",
       key))
     queue.max_delay = config.flush_timeout
-  end
-  if not queue.name then
-    queue.name = key
   end
   return queue
 end
@@ -381,8 +373,13 @@ function Queue:add(data)
     return nil, "entry must be a non-nil Lua value"
   end
 
-  if #self.queue == math.floor(self.capacity * 0.9) then
-    self:log(WARN, 'queue at 90% capacity')
+  if #self.queue >= self.capacity * 0.9 then
+    if not self.warned then
+      self:log(WARN, 'queue at 90% capacity')
+      self.warned = true
+    end
+  else
+    self.warned = nil
   end
 
   if #self.queue == self.capacity then

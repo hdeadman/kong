@@ -153,7 +153,7 @@ function HttpLogHandler:log(conf)
   end
 
   local queue = Queue.get(
-    "http-log",
+    (conf.queue and conf.queue.name) or conf.__key__,
     function(q, entries) return send_entries(q.conf, entries) end,
     Queue.get_params(conf)
   )

@@ -111,7 +111,7 @@ function DatadogHandler:log(conf)
   end
 
   local queue = Queue.get(
-    "datadog",
+    (conf.queue and conf.queue.name) or conf.__key__,
     function(q, entries) return log(q.conf, entries) end,
     Queue.get_params(conf)
   )

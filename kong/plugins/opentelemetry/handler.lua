@@ -147,7 +147,6 @@ function OpenTelemetryHandler:access()
 end
 
 local function get_params(config)
-  local key = config.__key__
   local queue = unpack({config.queue or {}})
   if config.batch_span_count then
     ngx.log(ngx.WARN, string.format(
@@ -161,9 +160,6 @@ local function get_params(config)
       key))
     queue.max_delay = config.batch_flush_delay
   end
-  if not queue.name then
-    queue.name = key
-  end
   return queue
 end
 
@@ -172,7 +168,7 @@ function OpenTelemetryHandler:log(conf)
   ngx_log(ngx_DEBUG, _log_prefix, "total spans in current request: ", ngx.ctx.KONG_SPANS and #ngx.ctx.KONG_SPANS)
 
   local queue = Queue.get(
-    "opentelemetry",
+    (conf.queue and conf.queue.name) or conf.__key__,
     function(q, entries) return http_export(q.conf, entries) end,
     get_params(conf)
   )

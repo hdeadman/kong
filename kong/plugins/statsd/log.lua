@@ -455,7 +455,7 @@ function _M.execute(conf)
   message.cache_metrics = ngx.ctx.cache_metrics
 
   local queue = Queue.get(
-    "statsd",
+    (conf.queue and conf.queue.name) or conf.__key__,
     function(q, entries) return log(q.conf, entries) end,
     Queue.get_params(conf)
   )

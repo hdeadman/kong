@@ -157,8 +157,8 @@ local Queue_mt = {
 local queues = {}
 
 
-function Queue.exists(queue_name)
-  return queues[queue_name] and true or false
+function Queue.exists(name)
+  return queues[name] and true or false
 end
 
 -------------------------------------------------------------------------------
@@ -166,26 +166,26 @@ end
 -- @param process function, invoked to process every payload generated
 -- @param opts table, requires `name`, optionally includes `retry_count`, `max_delay` and `batch_max_size`
 -- @return table: a Queue object.
-function Queue.get(queue_name, handler, opts)
+function Queue.get(name, handler, opts)
 
-  assert(type(queue_name) == "string",
-    "arg #1 (queue_name) must be a string")
+  assert(type(name) == "string",
+    "arg #1 (name) must be a string")
   assert(type(handler) == "function",
     "arg #2 (handler) must be a function")
   assert(type(opts) == "table",
     "arg #3 (opts) must be a table")
 
-  assert(not opts.name or (opts.name == queue_name),
+  assert(not opts.name or (opts.name == name),
     "inconsistent queue name in argument and queue configuration")
 
-  local queue = queues[queue_name]
+  local queue = queues[name]
   if queue then
     queue:log(DEBUG, "queue exists")
     return queue
   end
 
   queue = {
-    queue_name = queue_name,
+    name = name,
     handler = handler,
 
     semaphore = semaphore.new(),
@@ -197,8 +197,8 @@ function Queue.get(queue_name, handler, opts)
     queue = {},
   }
 
-  for name, _ in pairs(opts) do
-    assert(Queue.configuration_fields[name], name .. " is not a valid queue parameter")
+  for key, _ in pairs(opts) do
+    assert(Queue.configuration_fields[key], key .. " is not a valid queue parameter")
   end
 
   for key, schema in pairs(Queue.configuration_fields) do
@@ -206,14 +206,14 @@ function Queue.get(queue_name, handler, opts)
       assert(type(opts[key]) == schema.type,
         key .. " must be a " .. schema.type)
       queue[key] = opts[key]
-    else
+    elseif queue[key] == nil then
       queue[key] = schema.default
     end
   end
 
   queue = setmetatable(queue, Queue_mt)
 
-  kong.timer:named_every(queue_name, queue.poll_time, function(premature, q)
+  kong.timer:named_every(name, queue.poll_time, function(premature, q)
     if q.running
       and not ngx.worker.exiting()
       and (now() - q.last_used) < q.max_idle_time
@@ -223,13 +223,13 @@ function Queue.get(queue_name, handler, opts)
     else
       if not premature then
         -- kong might be nil during shutdown
-        kong.timer:cancel(queue_name)
+        kong.timer:cancel(name)
       end
-      queues[queue_name] = nil
+      queues[name] = nil
     end
   end, queue)
 
-  queues[queue_name] = queue
+  queues[name] = queue
 
   queue:log(DEBUG, "queue created")
 
@@ -244,7 +244,7 @@ end
 -- @param formatstring: format string, will get the queue name and ": " prepended
 -- @param ...: formatter arguments
 function Queue:log(level, formatstring, ...)
-  local message = self.queue_name .. ": " .. formatstring
+  local message = self.name .. ": " .. formatstring
   if select('#', ...) > 0 then
     return ngx.log(level, string.format(message, unpack({...})))
   else
@@ -329,6 +329,7 @@ end
 
 
 function Queue.get_params(config)
+  local key = config.__key__
   local queue = unpack({config.queue or {}})
   if config.retry_count then
     ngx.log(ngx.WARN, string.format(

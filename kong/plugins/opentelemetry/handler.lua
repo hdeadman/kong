@@ -147,6 +147,7 @@ function OpenTelemetryHandler:access()
 end
 
 local function get_params(config)
+  local key = config.__key__
   local queue = unpack({config.queue or {}})
   if config.batch_span_count then
     ngx.log(ngx.WARN, string.format(

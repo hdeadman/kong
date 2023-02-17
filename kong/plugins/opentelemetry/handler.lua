@@ -149,11 +149,11 @@ end
 local function get_params(config)
   local key = config.__key__
   local queue = unpack({config.queue or {}})
-  if config.batch_max_size then
+  if config.batch_span_count then
     ngx.log(ngx.WARN, string.format(
-      "deprecated `batch_max_size` parameter in plugin %s converted to `queue.batch_max_size`",
+      "deprecated `batch_span_count` parameter in plugin %s converted to `queue.batch_max_size`",
       key))
-    queue.batch_max_size = config.batch_max_size
+    queue.batch_max_size = config.batch_span_count
   end
   if config.batch_flush_delay then
     ngx.log(ngx.WARN, string.format(

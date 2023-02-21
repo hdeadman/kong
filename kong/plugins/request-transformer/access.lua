@@ -43,12 +43,6 @@ local compile_opts = {
   escape = "\xff", -- disable '#' as a valid template escape
 }
 
-if not lua_enabled then
-  compile_opts.inline_escape = "\xff" -- disable inline Lua expressions
-  kong.log.info("loading of untrusted Lua code disabled because " ..
-                "'untrusted_lua' config option is set to 'off'")
-end
-
 cjson.decode_array_with_array_mt(true)
 
 
@@ -133,6 +127,11 @@ end
 local function param_value(source_template, config_array)
   if not source_template or source_template == "" then
     return nil
+  end
+
+  if not lua_enabled then
+    -- Lua is disabled, no need to render the template
+    return source_template
   end
 
   -- find compiled templates for this plugin-configuration array

@@ -69,6 +69,15 @@
 
 ## Unreleased
 
+### Breaking Changes
+
+#### Plugins
+
+- **Session**: default value for `logout_post_arg` was removed. That means that you need to actively
+  configure it to be able to logout by HTTP POST argument. This was done because it lead in the most
+  cases to unnecessary reads of HTTP bodies, which caused other issues.
+  [#10333](https://github.com/Kong/kong/pull/10333)
+
 ### Dependencies
 
 - Bumped lua-resty-session from 4.0.2 to 4.0.3

@@ -94,7 +94,7 @@ return {
           { request_headers = headers },
           { logout_methods = logout_methods },
           { logout_query_arg = {  type = "string",  default = "session_logout" } },
-          { logout_post_arg = { type = "string", default = "session_logout" } },
+          { logout_post_arg = { type = "string" } },
         },
         shorthand_fields = {
           -- TODO: deprecated forms, to be removed in Kong 4.0

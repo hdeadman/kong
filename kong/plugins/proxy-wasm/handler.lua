@@ -41,6 +41,19 @@ function ProxyWasmHandler:access(conf)
   if not ok then
     error(err)
   end
+
+  local route = kong.router.get_route()
+  if route then
+    local ok, err = proxy_wasm.set_property("kong.route_id", route.id)
+    print("SET R PROP ", ok, " ", err, " ", route.id)
+  end
+  local service = kong.router.get_service()
+  if service then
+    local ok, err = proxy_wasm.set_property("kong.service_id", service.id)
+    print("SET S PROP ", ok, " ", err, " ", service.id)
+  end
+
+  proxy_wasm.resume("access")
 end
 
 

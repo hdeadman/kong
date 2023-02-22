@@ -80,6 +80,10 @@ server {
     access_log ${{PROXY_ACCESS_LOG}};
     error_log  ${{PROXY_ERROR_LOG}} ${{LOG_LEVEL}};
 
+> if wasm then
+    proxy_wasm_request_headers_in_access on;
+> end
+
 > if proxy_ssl_enabled then
 > for i = 1, #ssl_cert do
     ssl_certificate     $(ssl_cert[i]);

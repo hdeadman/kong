@@ -197,15 +197,15 @@ return {
           { custom_entity_check = {
             field_sources = { "retry_count", "queue_size", "flush_timeout" },
             fn = function(entity)
-              if entity.retry_count then
+              if entity.retry_count and entity.retry_count ~= 10 then
                 deprecation("retry_count is deprecated, please use queue.max_retry_time instead",
                             { after = "4.0", })
               end
-              if entity.queue_size then
+              if entity.queue_size and entity.queue_size ~= 1 then
                 deprecation("queue_size is deprecated, please use queue.batch_max_size instead",
                             { after = "4.0", })
               end
-              if entity.flush_timeout then
+              if entity.flush_timeout and entity.flush_timeout ~= 2 then
                 deprecation("flush_timeout is deprecated, please use queue.max_delay instead",
                             { after = "4.0", })
               end

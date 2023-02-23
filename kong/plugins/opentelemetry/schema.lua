@@ -54,11 +54,11 @@ return {
         { custom_entity_check = {
           field_sources = { "batch_span_count", "batch_flush_delay" },
           fn = function(entity)
-            if entity.batch_span_count then
+            if entity.batch_span_count and entity.batch_span_count ~= 200 then
               deprecation("batch_span_count is deprecated, please use queue.batch_max_size instead",
                           { after = "4.0", })
             end
-            if entity.batch_flush_delay then
+            if entity.batch_flush_delay and entity.batch_flush_delay ~= 3 then
               deprecation("batch_flush_delay is deprecated, please use queue.batch_max_size instead",
                           { after = "4.0", })
             end

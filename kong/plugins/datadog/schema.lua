@@ -108,56 +108,21 @@ return {
           { custom_entity_check = {
               field_sources = { "retry_count", "queue_size", "flush_timeout" },
               fn = function(entity)
-                if entity.retry_count then
+                if entity.retry_count and entity.retry_count ~= 10 then
                   deprecation("retry_count is deprecated, please use queue.max_retry_time instead",
                     { after = "4.0", })
                 end
-                if entity.queue_size then
+                if entity.queue_size and entity.queue_size ~= 1 then
                   deprecation("queue_size is deprecated, please use queue.batch_max_size instead",
                     { after = "4.0", })
                 end
-                if entity.flush_timeout then
+                if entity.flush_timeout and entity.flush_timeout ~= 2 then
                   deprecation("flush_timeout is deprecated, please use queue.max_delay instead",
                     { after = "4.0", })
                 end
                 return true
               end
           } },
-        },
-
-        entity_checks = {
-          { custom_entity_check = {
-            field_sources = { "retry_count", "queue_size", "flush_timeout" },
-            fn = function(entity)
-              if entity.retry_count then
-                deprecation("retry_count is deprecated, please use queue.max_retry_time instead",
-                            { after = "4.0", })
-              end
-              if entity.queue_size then
-                deprecation("queue_size is deprecated, please use queue.batch_max_size instead",
-                            { after = "4.0", })
-              end
-              if entity.flush_timeout then
-                deprecation("flush_timeout is deprecated, please use queue.max_delay instead",
-                            { after = "4.0", })
-              end
-              return true
-            end
-          } },
-        },
-        shorthand_fields = {
-          { retry_count = { type = "integer", default = 10, func = function(value)
-              return { ["queue.max_retry_time"] = value }
-            end,
-          }, },
-          { queue_size = { type = "integer", default = 1, func = function(value)
-              return { ["queue.batch_max_size"] = value }
-            end,
-          }, },
-          { flush_timeout = { type = "integer", default = 2, func = function(value)
-              return { ["queue.max_delay"] = value }
-            end,
-          }, },
         },
       },
     },

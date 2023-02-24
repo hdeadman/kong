@@ -26,8 +26,8 @@ use in/out pointer instead of array manipulation
 -- automatically retry.
 --
 -- If the `batch_max_size` parameter is larger than 1, processing of the
--- queue will only start after `max_delay` milliseconds have elapsed while
--- than `batch_max_size` entries are waiting on the queue.  If `batch_max_size`
+-- queue will only start after `max_delay` milliseconds have elapsed if
+-- less than `batch_max_size` entries are waiting on the queue.  If `batch_max_size`
 -- is 1, the queue will be processed immediately.
 --
 -- Usage:

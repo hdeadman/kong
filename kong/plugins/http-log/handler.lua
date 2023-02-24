@@ -80,7 +80,8 @@ end
 -- Sends the provided entries to the configured plugin host
 -- @return true if everything was sent correctly, falsy if error
 -- @return error message if there was an error
-local function send_entries(conf, entries)
+local function send_entries(queue, entries)
+  local conf = queue.conf
   local content_length, payload = prepare_payload(conf, entries)
 
   local method = conf.method
@@ -154,7 +155,7 @@ function HttpLogHandler:log(conf)
 
   local queue = Queue.get(
     (conf.queue and conf.queue.name) or conf.__key__,
-    function(q, entries) return send_entries(q.conf, entries) end,
+    send_entries,
     Queue.get_params(conf)
   )
   queue.conf = conf

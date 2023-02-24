@@ -14,11 +14,17 @@ use in/out pointer instead of array manipulation
 --
 -- This is a queue of "entries". Entries can be any Lua value.
 --
--- The queue has two mandatory parameters:  `name` is the name of the queue,
--- used to identify it in log messages, and `handler`, which is the
--- function which consumes entries.  Entries are dequeued in batches.  The
--- maximum size of each batch of entries that is passed to the `handler`
--- function can be configured using the `batch_max_size` parameter.
+-- The queue has two mandatory parameters:
+--
+-- `name` is the name of the queue. It uniquely identifies the queue across the
+-- system.  If two plugin instances use the same queue name, they will share one
+-- queue and their queue related configuration must match.
+--
+-- `handler` is the function which consumes entries.
+--
+-- Entries are dequeued in batches.  The maximum size of each batch of entries
+-- that is passed to the `handler` function can be configured using the
+-- `batch_max_size` parameter.
 --
 -- The handler function can either return true if the entries
 -- were successfully processed, or false and an error message to indicate that
@@ -60,7 +66,8 @@ use in/out pointer instead of array manipulation
 --   handler function together in one batch.
 -- * If processing fails, it will not be retried (retry_count equals 0)
 -- * If retry_count was bigger than 0, processing would be re-queued n times before finally being discarded.
--- * The retries are not regular: every time the handler fails, they next retry is delayed by n_try^2, up to 60s.
+-- * The retries are not regular: every time the handler fails, they next retry is delayed by n_try^2, up to
+--   max_retry_delay seconds.
 --
 -- The most important internal attributes of Queue are:
 --
@@ -307,7 +314,7 @@ end
 
 
 -------------------------------------------------------------------------------
--- Add data to the queue
+-- Add entry to the queue
 -- @param conf plugin configuration of the plugin instance that caused the item to be queued
 -- @param entry the value included in the queue. It can be any Lua value besides nil.
 -- @return true, or nil and an error message.

@@ -69,6 +69,13 @@
 
 ## Unreleased
 
+### Additions
+
+#### Plugins
+
+- **Request Transformer**: honor value of untrusted_lua configuration parameter
+  [#10327](https://github.com/Kong/kong/pull/10327)
+
 ### Dependencies
 
 - Bumped lua-resty-session from 4.0.2 to 4.0.3

@@ -43,7 +43,6 @@ dependencies = {
   "lua-resty-session == 4.0.3",
   "lua-resty-timer-ng == 0.2.3",
 }
-
 build = {
   type = "builtin",
   modules = {

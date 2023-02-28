@@ -75,6 +75,9 @@
 
 - Make runloop and init error response content types compliant with Accept header value
   [#10366](https://github.com/Kong/kong/pull/10366)
+- Support for configurable Node IDs
+  [#10385](https://github.com/Kong/kong/pull/10385)
+
 ### Dependencies
 
 - Bumped lua-resty-session from 4.0.2 to 4.0.3

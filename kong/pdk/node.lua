@@ -68,7 +68,9 @@ local function new(self)
 
     local shm = ngx.shared.kong
 
-    local ok, err = shm:safe_add(NODE_ID_KEY, utils.uuid())
+    local n = self.configuration.node_id and self.configuration.node_id or utils.uuid()
+
+    local ok, err = shm:safe_add(NODE_ID_KEY, n)
     if not ok and err ~= "exists" then
       error("failed to set 'node_id' in shm: " .. err)
     end

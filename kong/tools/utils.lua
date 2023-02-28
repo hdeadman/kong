@@ -32,6 +32,7 @@ local lower         = string.lower
 local fmt           = string.format
 local find          = string.find
 local gsub          = string.gsub
+local join          = pl_stringx.join
 local split         = pl_stringx.split
 local re_find       = ngx.re.find
 local re_match      = ngx.re.match
@@ -1245,6 +1246,7 @@ end
 
 
 local get_mime_type
+local get_response_type
 local get_error_template
 do
   local CONTENT_TYPE_JSON    = "application/json"
@@ -1324,6 +1326,43 @@ do
     end
   })
 
+
+  get_response_type = function(accept_header)
+    local content_type = MIME_TYPES[CONTENT_TYPE_DEFAULT]
+    if type(accept_header) == "table" then
+      accept_header = join(",", accept_header)
+    end
+
+    if accept_header ~= nil then
+      local accept_values = split(accept_header, ",")
+      local max_quality = 0
+      for _, value in ipairs(accept_values) do
+        local mimetype_values = split(value, ";")
+        local name
+        local quality = 1
+        for _, entry in ipairs(mimetype_values) do
+          local m = ngx.re.match(entry, [[^\s*(\S+\/\S+)\s*$]], "ajo")
+          if m then
+            name = m[1]
+          else
+            m = ngx.re.match(entry, [[^\s*q=([0-9]*[\.][0-9]+)\s*$]], "ajoi")
+            if m then
+              quality = tonumber(m[1])
+            end
+          end
+        end
+
+        if name and quality > max_quality then
+          content_type = get_mime_type(name) or content_type
+          max_quality = quality
+        end
+      end
+    end
+
+    return content_type
+  end
+
+
   get_mime_type = function(content_header, use_default)
     use_default = use_default == nil or use_default
     content_header = _M.strip(content_header)
@@ -1334,7 +1373,7 @@ do
     if #entries > 1 then
       if entries[2] == CONTENT_TYPE_ANY then
         if entries[1] == CONTENT_TYPE_ANY then
-          mime_type = MIME_TYPES["default"]
+          mime_type = MIME_TYPES[CONTENT_TYPE_DEFAULT]
         else
           mime_type = MIME_TYPES[entries[1]]
         end
@@ -1344,7 +1383,7 @@ do
     end
 
     if mime_type or use_default then
-      return mime_type or MIME_TYPES["default"]
+      return mime_type or MIME_TYPES[CONTENT_TYPE_DEFAULT]
     end
 
     return nil, "could not find MIME type"
@@ -1374,6 +1413,7 @@ do
 
 end
 _M.get_mime_type = get_mime_type
+_M.get_response_type = get_response_type
 _M.get_error_template = get_error_template
 
 

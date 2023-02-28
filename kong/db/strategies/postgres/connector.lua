@@ -314,59 +314,7 @@ function _mt:init()
 end
 
 
-function _mt:init_worker(strategies)
-  if ngx.worker.id() == 0 then
-
-    local table_names = get_names_of_tables_with_ttl(strategies)
-    local ttl_escaped = self:escape_identifier("ttl")
-    local expire_at_escaped = self:escape_identifier("expire_at")
-    local cleanup_statements = {}
-    local cleanup_statements_count = #table_names
-    for i = 1, cleanup_statements_count do
-      local table_name = table_names[i]
-      local column_name = table_name == "cluster_events" and expire_at_escaped
-                                                          or ttl_escaped
-      cleanup_statements[i] = concat {
-        "  DELETE FROM ",
-        self:escape_identifier(table_name),
-        " WHERE ",
-        column_name,
-        " < CURRENT_TIMESTAMP AT TIME ZONE 'UTC';"
-      }
-    end
-
-    local cleanup_statement = concat(cleanup_statements, "\n")
-
-    return timer_every(60, function(premature)
-      if premature then
-        return
-      end
-
-      local ok, err, _, num_queries = self:query(cleanup_statement)
-      if not ok then
-        if num_queries then
-          for i = num_queries + 1, cleanup_statements_count do
-            local statement = cleanup_statements[i]
-            local ok, err = self:query(statement)
-            if not ok then
-              if err then
-                log(WARN, "unable to clean expired rows from table '",
-                          table_names[i], "' on PostgreSQL database (",
-                          err, ")")
-              else
-                log(WARN, "unable to clean expired rows from table '",
-                          table_names[i], "' on PostgreSQL database")
-              end
-            end
-          end
-
-        else
-          log(ERR, "unable to clean expired rows from PostgreSQL database (", err, ")")
-        end
-      end
-    end)
-  end
-
+function _mt:init_worker()
   return true
 end
 

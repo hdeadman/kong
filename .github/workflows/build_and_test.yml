@@ -53,6 +53,7 @@ jobs:
       run: |
           source .ci/setup_env_github.sh
           make dev
+          make release
 
   lint-doc-and-unit-tests:
     name: Lint, Doc and Unit tests
